@@ -1,0 +1,115 @@
+% =========================================================================
+%  Capítulo 4 — Conclusão
+% =========================================================================
+
+\chapter{Conclusão}
+\label{cap:conclusao}
+
+% --- INSTRUÇÕES (apagar antes da entrega) ---------------------
+% A conclusão NÃO é um resumo do que se fez. É uma reflexão
+% crítica sobre:
+%   - O que ficou bem feito.
+%   - O que ficaria diferente se tivessem mais tempo.
+%   - Que aprendizagens foram feitas.
+%   - Que trabalho futuro faz sentido.
+% Evitar frases vazias do tipo ``foi um projeto enriquecedor''.
+% Concretizar: o que aprenderam SOBRE arquitetura web que não
+% sabiam antes?
+% ---------------------------------------------------------------
+
+
+\section{Síntese do trabalho realizado}
+\label{sec:sintese}
+
+% Síntese curta do que foi efetivamente entregue. Esta secção
+% deve ser objetiva: percentagem de requisitos implementados,
+% módulos funcionais, etc.
+
+[Apresentar de forma sintética o que foi efetivamente
+implementado. Recomenda-se referir a cobertura dos requisitos
+funcionais (RF-01 a RF-15) e dos requisitos não funcionais,
+indicando claramente o que ficou completo, parcial e por
+implementar.]
+
+
+\section{Avaliação dos critérios de aceitação}
+\label{sec:criterios}
+
+% Confrontar o trabalho realizado com os critérios de aceitação
+% do enunciado. Esta tabela facilita a vida ao avaliador.
+
+A Tabela~\ref{tab:criterios} confronta o trabalho realizado com
+os critérios de aceitação definidos no enunciado.
+
+\begin{table}[H]
+\centering
+\caption{Verificação dos critérios de aceitação do projeto.}
+\label{tab:criterios}
+\footnotesize
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{l X c}
+\toprule
+\textbf{ID} & \textbf{Critério} & \textbf{Estado} \\
+\midrule
+CA-01 & Um utilizador autenticado acede apenas às operações permitidas pelo seu perfil. & \\
+CA-02 & O sistema suporta os três tipos de plano de cultivo e a sua associação a lotes. & \\
+CA-03 & O registo de medições ambientais pode originar alertas automáticos. & \\
+CA-04 & O sistema demonstra comportamento distinto em modo \emph{Manual} e \emph{Automático}. & \\
+CA-05 & É possível consultar histórico, exportar relatórios e observar rastreabilidade. & \\
+CA-06 & A arquitetura de armazenamento no \emph{browser} está implementada e coerente. & \\
+CA-07 & A implementação está alinhada com a especificação OpenAPI. & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+\textit{Legenda:} preencher cada linha com \checkmark\ (cumprido),
+$\sim$ (parcialmente cumprido) ou $\times$ (não cumprido), seguido
+de uma breve evidência.
+
+
+\section{Reflexão crítica}
+\label{sec:reflexao}
+
+% Esta é a secção que distingue um relatório bom de um relatório
+% medíocre. Ser HONESTO. Os avaliadores valorizam mais um
+% relatório que reconhece limitações do que um que pretende ser
+% perfeito.
+
+\subsection{O que correu bem}
+
+[Identificar os aspetos do projeto onde a equipa considera ter
+tomado boas decisões. Justificar com evidências concretas — não
+basta dizer ``a arquitetura ficou bem''; é preciso explicar
+porquê.]
+
+\subsection{O que faríamos diferente}
+
+[Identificar honestamente as decisões que, em retrospetiva, a
+equipa repensaria. Esta é uma das partes mais valorizadas do
+relatório: mostra capacidade de aprendizagem e pensamento
+crítico.]
+
+\subsection{Aprendizagens da equipa}
+
+[Aprendizagens técnicas e de processo. Que conceitos ficaram mais
+claros? Que ferramentas mostraram ser mais ou menos adequadas? Que
+prática de equipa funcionou melhor?]
+
+
+\section{Trabalho futuro}
+\label{sec:futuro}
+
+% Lista priorizada de melhorias possíveis. Pode incluir:
+%   - Requisitos identificados mas não implementados.
+%   - Otimizações de desempenho ou usabilidade.
+%   - Funcionalidades que extravasam o âmbito atual mas
+%     fariam sentido numa próxima iteração.
+
+Identificam-se como direções relevantes para iterações futuras:
+
+\begin{itemize}
+  \item {}[Listar funcionalidades não implementadas que fariam sentido — e.g., notificações \emph{push}, \emph{dashboards} avançados, integração com sensores reais.]
+  \item {}[Listar melhorias de natureza técnica — e.g., \emph{cobertura de testes automatizados, observabilidade, hardening de segurança}.]
+  \item {}[Listar mudanças de processo ou metodologia que ajudariam num projeto semelhante.]
+\end{itemize}

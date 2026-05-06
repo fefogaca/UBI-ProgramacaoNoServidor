@@ -1,0 +1,408 @@
+% =========================================================================
+%  Capítulo 3 — Arquitetura
+% =========================================================================
+
+\chapter{Arquitetura}
+\label{cap:arquitetura}
+
+% --- INSTRUÇÕES (apagar antes da entrega) ---------------------
+% Este capítulo é o que distingue um relatório bom de um
+% relatório medíocre. Não basta dizer ``usámos Node.js e
+% MongoDB'' — é preciso JUSTIFICAR cada decisão.
+%
+% Para cada decisão de arquitetura, respondam a três perguntas:
+%   1. Que dados/lógica vivem aqui?
+%   2. Porquê AQUI e não noutra camada?
+%   3. Que alternativas foram consideradas e descartadas?
+%
+% Usem a caixa "decisao" sempre que registarem uma decisão
+% importante — facilita a leitura e mostra o pensamento crítico
+% da equipa.
+% ---------------------------------------------------------------
+
+
+\section{Visão geral}
+\label{sec:arquitetura-geral}
+
+% Visão de alto nível: três camadas, comunicação entre elas,
+% protocolos. Acompanhar com o diagrama abaixo.
+
+A solução adopta uma arquitetura em três camadas, separando
+claramente as responsabilidades do cliente, do servidor e da
+persistência. A Figura~\ref{fig:arquitetura-geral} apresenta a
+visão de alto nível.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.6cm,
+    bloco/.style={
+      rectangle, rounded corners=3pt,
+      draw=forest, line width=0.8pt,
+      fill=boxbg,
+      minimum width=3.4cm, minimum height=4cm,
+      align=center, font=\small
+    },
+    seta/.style={
+      <->, >=Stealth, line width=0.8pt, color=forest
+    }
+]
+
+% Bloco BROWSER
+\node[bloco] (browser) {%
+  \begin{minipage}{3cm}
+    \centering
+    {\sffamily\bfseries\small\color{forest} BROWSER}\\[1pt]
+    {\tiny\itshape\color{textMuted} Cliente}\\[6pt]
+    {\scriptsize
+      \texttt{HTML} / \texttt{CSS} / \texttt{JS}\\
+      \texttt{localStorage}\\
+      \texttt{sessionStorage}\\
+      \texttt{IndexedDB}\\
+      \texttt{Cache API}\\
+      Service Worker
+    }
+  \end{minipage}
+};
+
+% Bloco API
+\node[bloco, right=of browser] (api) {%
+  \begin{minipage}{3cm}
+    \centering
+    {\sffamily\bfseries\small\color{forest} API NODE.JS}\\[1pt]
+    {\tiny\itshape\color{textMuted} Servidor}\\[6pt]
+    {\scriptsize
+      Rotas REST\\
+      Middleware JWT\\
+      Validação Mongoose\\
+      Motor de regras\\
+      Logs auditoria\\
+      OpenAPI
+    }
+  \end{minipage}
+};
+
+% Bloco BD
+\node[bloco, right=of api] (db) {%
+  \begin{minipage}{3cm}
+    \centering
+    {\sffamily\bfseries\small\color{forest} MONGODB}\\[1pt]
+    {\tiny\itshape\color{textMuted} Persistência}\\[6pt]
+    {\scriptsize
+      Utilizador\\
+      ErvaAromática\\
+      PlanoCultivo\\
+      LoteCultivo\\
+      Tarefa, Medição\\
+      Alerta, Auditoria
+    }
+  \end{minipage}
+};
+
+% Setas
+\draw[seta] (browser) -- node[above, font=\tiny\sffamily, color=textMuted] {HTTPS · JSON} (api);
+\draw[seta] (api) -- node[above, font=\tiny\sffamily, color=textMuted] {Mongoose} (db);
+
+\end{tikzpicture}
+\caption{Visão de alto nível da arquitetura em três camadas.}
+\label{fig:arquitetura-geral}
+\end{figure}
+
+A comunicação entre o cliente e o servidor faz-se sobre HTTPS,
+trocando mensagens em JSON. O servidor acede à base de dados
+através do ODM \texttt{Mongoose}, que assegura a validação de
+esquemas antes da persistência.
+
+
+\section{Matriz de responsabilidades}
+\label{sec:matriz-responsabilidades}
+
+% Esta é a tabela mais importante do capítulo. Para cada
+% funcionalidade, indica claramente o que fica em cada camada.
+% Forçam-se assim respostas explícitas à pergunta "porquê aqui?"
+
+A Tabela~\ref{tab:matriz} apresenta a distribuição de
+responsabilidades por camada para as funcionalidades-chave do
+sistema.
+
+\begin{table}[H]
+\centering
+\caption{Distribuição de responsabilidades por camada.}
+\label{tab:matriz}
+\footnotesize
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{l X X X}
+\toprule
+\textbf{Funcionalidade} & \textbf{Browser} & \textbf{API} & \textbf{Base de Dados} \\
+\midrule
+Autenticação JWT &
+Envio de credenciais; armazenamento e renovação do token. &
+Validação de credenciais; emissão e verificação do JWT. &
+Persistência de utilizadores e \emph{hashes} de palavra-passe. \\
+
+Registo de medição ambiental &
+Captura via formulário; \emph{enqueue} em IndexedDB se \emph{offline}. &
+Validação de regras; persistência; verificação de limites. &
+Persistência da medição e dos alertas eventualmente gerados. \\
+
+Geração de alertas &
+Apresentação ao utilizador; UX de resolução. &
+Avaliação dos limites do plano; criação dos alertas. &
+Persistência do alerta com referência ao lote e ao plano. \\
+
+Importação de CSV/Excel &
+Pré-validação leve do ficheiro (formato, colunas). &
+Validação completa, normalização e inserção em \emph{bulk}. &
+Persistência das ervas aromáticas importadas. \\
+
+Modo Manual / Automático &
+UI de comutação e de listagem das ações sugeridas. &
+Motor de regras; execução ou sugestão das ações. &
+Registo da configuração do modo e do histórico de ações. \\
+
+Sincronização \emph{offline} &
+Fila de operações pendentes em IndexedDB; reenvio ao reconectar. &
+Tratamento idempotente das operações; resolução de conflitos. &
+Persistência idempotente; carimbos temporais. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{Camada de cliente (\emph{browser})}
+\label{sec:camada-browser}
+
+% Esta secção é o "documento de arquitetura cliente" exigido
+% pelo enunciado. Tem de cobrir os 4 mecanismos de armazenamento.
+
+A camada de cliente foi desenhada para suportar três cenários
+distintos de operação: ligação estável, ligação intermitente e
+ausência total de conectividade. Esta secção descreve os
+mecanismos de armazenamento utilizados, a respetiva justificação,
+política de invalidação e estratégia de sincronização.
+
+\subsection{Mecanismos de armazenamento}
+
+\begin{table}[H]
+\centering
+\caption{Mecanismos de armazenamento no \emph{browser} e respetivos propósitos.}
+\label{tab:browser-storage}
+\footnotesize
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{l X X X}
+\toprule
+\textbf{Mecanismo} & \textbf{Dados guardados} & \textbf{Justificação} & \textbf{Expiração} \\
+\midrule
+\texttt{localStorage} &
+Preferências da UI; identificador do último ecrã visitado; \emph{feature flags}. &
+Pequenos pares chave/valor síncronos; persistem entre sessões. &
+Manual; limpa no \emph{logout}. \\
+
+\texttt{sessionStorage} &
+Estado temporário de formulários multi-passo (\emph{wizards}). &
+Volátil por aba; evita ``poluir'' o estado entre sessões. &
+Fim da sessão da aba. \\
+
+\texttt{IndexedDB} &
+Histórico recente; cache de lotes e medições; fila de operações pendentes (\emph{offline}). &
+Estrutura, queryable, assíncrono; permite operação degradada. &
+TTL de [N] dias para o cache; a fila é purgada após sincronização bem-sucedida. \\
+
+\texttt{Cache API} &
+Recursos estáticos (HTML, CSS, JS, ícones); respostas \texttt{GET} idempotentes selecionadas. &
+Gerida pelo Service Worker; reduz latência e suporta arranque \emph{offline}. &
+Estratégia \emph{stale-while-revalidate}; invalidação por versão. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\subsection{Decisão sobre o armazenamento do JWT}
+\label{sec:decisao-jwt}
+
+% Aqui é OBRIGATÓRIO justificar com profundidade. O enunciado
+% pede explicitamente esta decisão e a sua justificação de
+% segurança. Substituir o exemplo abaixo pela decisão real da
+% equipa.
+
+\begin{decisao}[title=Decisão DA-01: armazenamento do token JWT]
+\textbf{Decisão.} O token JWT é guardado em [\texttt{localStorage} / \texttt{sessionStorage} / \emph{cookie httpOnly}].
+
+\textbf{Alternativas consideradas.}
+\begin{itemize}
+  \item \texttt{localStorage}: persistência longa, mas exposto a ataques XSS.
+  \item \texttt{sessionStorage}: limita a janela de exposição mas obriga a re-autenticar a cada sessão.
+  \item \emph{Cookie httpOnly + Secure + SameSite}: imune a XSS por JavaScript mas requer mitigação de CSRF.
+\end{itemize}
+
+\textbf{Justificação.} [Justificar com base no perfil de risco do
+sistema: estufa em ambiente operacional, sessões longas, baixa
+exposição a CSRF se a API não usa formulários tradicionais, etc.]
+
+\textbf{Mitigações.} [Lista de medidas adotadas: \emph{Content Security
+Policy} restritiva, \emph{escape} de saídas, sanitização de \emph{inputs},
+expiração curta e renovação por \emph{refresh token}, etc.]
+\end{decisao}
+
+
+\subsection{Estratégia de sincronização}
+\label{sec:sync}
+
+% Como funciona o offline → online? Como se evitam duplicações?
+% Como se resolvem conflitos?
+
+A operação em modo degradado segue o padrão \emph{outbox}: as
+operações realizadas \emph{offline} são enfileiradas em \texttt{IndexedDB}
+e reenviadas ao servidor assim que a conectividade é restabelecida.
+Para garantir a idempotência, cada operação carrega um identificador
+único gerado no cliente (UUID) que o servidor reconhece e ignora em
+caso de submissões repetidas.
+
+\begin{aviso}
+Em caso de conflito (e.g., duas equipas registam a mesma colheita
+do mesmo lote em momentos diferentes), o sistema adota a estratégia
+de [\emph{last-write-wins} / \emph{merge} / \emph{flag para revisão
+humana}]. Esta decisão tem implicações operacionais e deve ser
+discutida explicitamente.
+\end{aviso}
+
+
+\section{Camada de servidor (API)}
+\label{sec:camada-api}
+
+% Estrutura da API: organização das rotas, middleware,
+% autenticação, motor de regras, geração de logs, geração da
+% documentação OpenAPI.
+
+\subsection{Organização das rotas}
+
+A API expõe os recursos da aplicação seguindo as convenções REST.
+A Tabela~\ref{tab:rotas} sintetiza os principais \emph{endpoints}
+agrupados por recurso. A especificação completa encontra-se em
+\texttt{openapi.yaml} (ver Anexo~\ref{anexo:openapi}).
+Na Sprint 1 foi priorizada a especificação dos recursos de domínio,
+ficando a implementação da autenticação para sprint posterior.
+
+\begin{table}[H]
+\centering
+\caption{Resumo dos principais \emph{endpoints} da API.}
+\label{tab:rotas}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+\textbf{Método} & \textbf{Rota} & \textbf{Descrição} \\
+\midrule
+GET   & \texttt{/api/v1/users}                  & Listagem de utilizadores (Admin.). \\
+POST  & \texttt{/api/v1/herbs/import}           & Importação em \emph{bulk} (CSV/Excel). \\
+POST  & \texttt{/api/v1/cultivation-plans}      & Criação de plano de cultivo (\emph{regular}, \emph{emergência}, \emph{pontual}). \\
+POST  & \texttt{/api/v1/measurements}           & Registo de medição ambiental com potencial geração de alerta. \\
+POST  & \texttt{/api/v1/alerts/:id/ignore}      & Ignorar alerta com justificação obrigatória. \\
+GET   & \texttt{/api/v1/reports/export}         & Exportação de relatório em CSV/Excel. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\subsection{Cadeia de \emph{middleware}}
+
+Cada pedido atravessa uma cadeia de \emph{middleware} ordenada da
+seguinte forma:
+
+\begin{enumerate}
+  \item \textbf{Logger HTTP}: regista método, rota, IP e \emph{user-agent}.
+  \item \textbf{Validação JWT}: verifica assinatura e expiração; rejeita pedidos não autenticados em rotas protegidas.
+  \item \textbf{Autorização por perfil}: confronta o perfil do utilizador (RF-01) com os requisitos da rota.
+  \item \textbf{Validação de \emph{payload}}: valida o corpo do pedido contra o esquema Mongoose ou contra um \emph{schema} JSON.
+  \item \textbf{Controlador da rota}: executa a lógica de negócio.
+  \item \textbf{\emph{Middleware} de erros}: converte exceções em respostas HTTP coerentes com a OpenAPI.
+\end{enumerate}
+
+
+\subsection{Motor de regras e modo Automático}
+\label{sec:motor-regras}
+
+\begin{decisao}[title=Decisão DA-02: localização do motor de regras]
+\textbf{Decisão.} O motor de regras corre na API, e não no cliente.
+
+\textbf{Justificação.} Embora o cliente possa fornecer \emph{feedback}
+otimista quando uma medição é registada \emph{offline}, a fonte da
+verdade tem de estar no servidor: (i) os limites do plano podem
+mudar; (ii) a coerência entre lotes exige uma visão global; (iii)
+no modo \emph{Automático}, ações como ativar a rega ou ajustar a
+ventilação têm efeitos físicos que não podem depender do estado
+local do cliente.
+\end{decisao}
+
+
+\section{Modelo de dados}
+\label{sec:modelo-dados}
+
+% Apresentar o modelo conceptual com um diagrama (entidades e
+% relações). Pode ser feito em TikZ ou desenhado num editor
+% externo e incluído como imagem.
+
+A Figura~\ref{fig:modelo-dados} apresenta o modelo conceptual
+das entidades persistidas em MongoDB. Por simplicidade, são
+omitidos atributos secundários.
+
+% Substituir pelo diagrama real (e.g., draw.io exportado para PDF).
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.9\linewidth}{\centering\vspace{2cm}
+\textit{[Inserir aqui o diagrama de entidades e relações.]}\vspace{2cm}}}
+\caption{Modelo conceptual de dados (entidades e relações).}
+\label{fig:modelo-dados}
+\end{figure}
+
+\begin{nota}
+Em MongoDB, cada documento pode ``embeber'' subdocumentos ou
+referenciar outros documentos por \texttt{ObjectId}. As decisões
+de \emph{embedding} versus \emph{referencing} influenciam o
+desempenho das consultas e devem ser justificadas. Recomenda-se
+uma subsecção dedicada onde, para cada par de entidades
+relacionadas, se indique a opção tomada e o seu motivo.
+\end{nota}
+
+
+\section{Segurança}
+\label{sec:seguranca}
+
+% Reunir num só lugar todas as decisões de segurança.
+% Útil para a equipa, útil para a avaliação.
+
+As principais decisões de segurança adotadas são as seguintes:
+
+\begin{itemize}
+  \item As palavras-passe são armazenadas com \emph{hashing} adaptativo (\texttt{bcrypt}, fator de custo $\geq 10$).
+  \item A autenticação usa JWT assinados (HS256 ou RS256) com \emph{payload} mínimo e expiração de [N] minutos.
+  \item Todas as rotas, exceto as públicas, exigem JWT válido.
+  \item A autorização é controlada por perfil; o servidor nunca confia em campos sensíveis enviados pelo cliente (e.g., o perfil do utilizador é sempre obtido do JWT, não do corpo do pedido).
+  \item Os \emph{inputs} são validados contra esquemas; as saídas que possam conter texto introduzido pelo utilizador são \emph{escaped}.
+  \item As ações sensíveis (criação de planos, autorização de planos pontuais, eliminação de utilizadores) ficam registadas em \texttt{LogAuditoria}.
+\end{itemize}
+
+
+\section{Resumo das decisões}
+\label{sec:resumo-decisoes}
+
+% Uma tabela síntese ajuda muito o avaliador a perceber o
+% pensamento crítico da equipa. Listar as decisões principais
+% com referência cruzada para a secção onde são justificadas.
+
+\begin{table}[H]
+\centering
+\caption{Síntese das decisões de arquitetura.}
+\label{tab:decisoes}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{l X l}
+\toprule
+\textbf{ID} & \textbf{Decisão} & \textbf{Secção} \\
+\midrule
+DA-01 & Armazenamento do JWT em [\dots]                              & \ref{sec:decisao-jwt} \\
+DA-02 & Motor de regras na API                                       & \ref{sec:motor-regras} \\
+DA-03 & Sincronização \emph{offline} via fila idempotente em IndexedDB & \ref{sec:sync} \\
+DA-04 & [Adicionar conforme as decisões reais da equipa]             & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}

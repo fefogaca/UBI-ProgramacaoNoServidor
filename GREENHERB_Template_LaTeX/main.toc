@@ -1,0 +1,40 @@
+\babel@toc {portuguese}{}\relax 
+\contentsline {chapter}{Resumo}{i}{chapter*.1}%
+\contentsline {chapter}{\numberline {1}Introdução}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Enquadramento}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Objetivos}{1}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Contexto e restrições}{1}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Estrutura do documento}{2}{section.1.4}%
+\contentsline {chapter}{\numberline {2}Requisitos}{3}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Atores do sistema}{3}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Regras de negócio}{3}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Requisitos funcionais}{4}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Detalhe e critérios de aceitação (exemplos)}{4}{subsection.2.3.1}%
+\contentsline {paragraph}{RF-08 — Geração automática de alertas.}{4}{subsection.2.3.1}%
+\contentsline {paragraph}{RF-09 — Resolução ou \emph {ignore} de alertas.}{5}{subsection.2.3.1}%
+\contentsline {section}{\numberline {2.4}Requisitos não funcionais}{5}{section.2.4}%
+\contentsline {chapter}{\numberline {3}Arquitetura}{6}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Visão geral}{6}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Matriz de responsabilidades}{6}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Camada de cliente (\emph {browser})}{7}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Mecanismos de armazenamento}{8}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Decisão sobre o armazenamento do JWT}{8}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Estratégia de sincronização}{8}{subsection.3.3.3}%
+\contentsline {section}{\numberline {3.4}Camada de servidor (API)}{9}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Organização das rotas}{9}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Cadeia de \emph {middleware}}{9}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}Motor de regras e modo Automático}{10}{subsection.3.4.3}%
+\contentsline {section}{\numberline {3.5}Modelo de dados}{10}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Segurança}{10}{section.3.6}%
+\contentsline {section}{\numberline {3.7}Resumo das decisões}{11}{section.3.7}%
+\contentsline {chapter}{\numberline {4}Conclusão}{12}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Síntese do trabalho realizado}{12}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Avaliação dos critérios de aceitação}{12}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Reflexão crítica}{12}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}O que correu bem}{12}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}O que faríamos diferente}{13}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Aprendizagens da equipa}{13}{subsection.4.3.3}%
+\contentsline {section}{\numberline {4.4}Trabalho futuro}{13}{section.4.4}%
+\contentsline {chapter}{\numberline {A}Especificação OpenAPI}{14}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Dados de demonstração}{15}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Distribuição do trabalho}{16}{appendix.C}%

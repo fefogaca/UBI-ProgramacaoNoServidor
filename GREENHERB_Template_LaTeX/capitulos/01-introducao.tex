@@ -1,0 +1,84 @@
+% =========================================================================
+%  Capítulo 1 — Introdução
+% =========================================================================
+
+\chapter{Introdução}
+\label{cap:introducao}
+
+% --- INSTRUÇÕES (apagar antes da entrega) ---------------------
+% A introdução deve permitir a um leitor externo perceber:
+%   - O problema que o sistema vem resolver.
+%   - O contexto em que o sistema vai ser utilizado.
+%   - Quais os objetivos do projeto.
+%   - Como está organizado o restante do relatório.
+% ---------------------------------------------------------------
+
+\section{Enquadramento}
+\label{sec:enquadramento}
+
+% Apresentem aqui o domínio do problema. O que é a GREENHERB?
+% Que tipo de operação se passa numa estufa de ervas aromáticas?
+% Que dificuldades existem hoje sem informatização?
+% (1 a 2 parágrafos)
+
+A empresa GREENHERB pretende informatizar a gestão de uma estufa
+dedicada à produção de ervas aromáticas, designadamente
+manjericão, hortelã, alecrim e tomilho. O sistema atual,
+maioritariamente manual, cria dificuldades no planeamento, na
+monitorização das condições ambientais e na rastreabilidade das
+intervenções realizadas.
+
+[Completar: descrever o impacto destas dificuldades na operação
+quotidiana da estufa e a oportunidade que a digitalização representa.]
+
+
+\section{Objetivos}
+\label{sec:objetivos}
+
+% Listar os objetivos do projeto. Recomenda-se uma lista
+% numerada, com objetivos verificáveis (não vagos).
+
+O presente trabalho tem como objetivos:
+
+\begin{enumerate}
+  \item Desenvolver uma aplicação web \emph{full-stack} que suporte o ciclo de vida completo de lotes de cultivo;
+  \item Implementar autenticação, autorização baseada em perfis e rastreabilidade das ações realizadas;
+  \item Especificar e documentar a API segundo a norma OpenAPI 3.x;
+  \item Definir uma arquitetura de armazenamento no browser que permita o funcionamento da aplicação em condições de conectividade instável;
+  \item {}[Adicionar / ajustar conforme decisões da equipa.]
+\end{enumerate}
+
+
+\section{Contexto e restrições}
+\label{sec:contexto}
+
+% Esta secção é onde se reconhecem as restrições do projeto.
+% Útil para enquadrar decisões posteriores.
+
+A solução é desenvolvida com restrições técnicas previamente
+definidas: o \emph{frontend} em \texttt{HTML}, \texttt{CSS} e
+\texttt{JavaScript}, o \emph{backend} em \texttt{Node.js} com
+recurso a \texttt{Mongoose} para acesso a uma base de dados
+\texttt{MongoDB}, autenticação baseada em \texttt{JWT} e uso obrigatório
+dos mecanismos de armazenamento do navegador (\texttt{localStorage}
+ou \texttt{sessionStorage}, \texttt{IndexedDB} e \texttt{Cache API}).
+
+Acresce o contexto operacional: a aplicação é utilizada em ambiente
+de estufa onde a conectividade pode ser instável, o que condiciona
+fortemente as decisões de arquitetura do lado do cliente.
+
+
+\section{Estrutura do documento}
+\label{sec:estrutura}
+
+% Pequena ``mapa'' do que o leitor vai encontrar nos próximos
+% capítulos. Manter curto.
+
+O restante documento organiza-se da seguinte forma. O Capítulo~\ref{cap:requisitos}
+identifica e especifica os requisitos do sistema, distinguindo entre
+funcionais e não funcionais e apresentando a sua priorização. O
+Capítulo~\ref{cap:arquitetura} descreve a arquitetura adotada,
+detalhando as responsabilidades de cada camada (\emph{browser}, API e
+base de dados) e justificando as decisões tomadas. O
+Capítulo~\ref{cap:conclusao} apresenta as conclusões, balanço crítico
+e trabalho futuro.

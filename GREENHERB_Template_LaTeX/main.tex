@@ -1,0 +1,178 @@
+% =========================================================================
+%  GREENHERB - Relatório de Projeto
+%  Template LaTeX para Overleaf
+%  ---------------------------------------------------------------
+%  Como usar:
+%    1. Substituir os campos em config/identidade.tex (autores, turma, etc.)
+%    2. Editar os capítulos em capitulos/
+%    3. Adicionar imagens em img/
+%    4. Compilar com pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX)
+% =========================================================================
+
+\documentclass[11pt, a4paper]{report}
+
+% --- Codificação e idioma --------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[portuguese]{babel}
+\usepackage{lmodern}
+
+% --- Geometria da página ---------------------------------------
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm, headheight=14pt]{geometry}
+
+% --- Tipografia ------------------------------------------------
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{parskip}     % parágrafos com espaço em vez de indentação
+
+% --- Cores (paleta Forest & Moss, alinhada com os slides) ------
+\usepackage{xcolor}
+\definecolor{forest}{HTML}{2C5F2D}
+\definecolor{moss}{HTML}{97BC62}
+\definecolor{mossLight}{HTML}{C8DBA0}
+\definecolor{charcoal}{HTML}{1F2D1F}
+\definecolor{textMuted}{HTML}{5C6B5C}
+\definecolor{amber}{HTML}{D9822B}
+\definecolor{boxbg}{HTML}{F5F8F0}
+\definecolor{border}{HTML}{D8DDD0}
+
+% --- Gráficos e tabelas ----------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{amssymb}     % \checkmark e símbolos matemáticos
+
+% --- Listas e código -------------------------------------------
+\usepackage{enumitem}
+\setlist[itemize]{topsep=2pt, itemsep=1pt, parsep=0pt}
+\setlist[enumerate]{topsep=2pt, itemsep=1pt, parsep=0pt}
+
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{boxbg},
+  frame=single,
+  rulecolor=\color{border},
+  framesep=4pt,
+  breaklines=true,
+  showstringspaces=false,
+  captionpos=b,
+  keywordstyle=\color{forest}\bfseries,
+  commentstyle=\color{textMuted}\itshape,
+  stringstyle=\color{amber}
+}
+
+% --- Caixas destacadas (notas, dicas, decisões) ----------------
+\usepackage[most]{tcolorbox}
+
+\newtcolorbox{decisao}[1][]{
+  colback=boxbg, colframe=forest, boxrule=0.6pt,
+  arc=2pt, left=10pt, right=10pt, top=8pt, bottom=8pt,
+  fonttitle=\bfseries\color{white},
+  coltitle=white,
+  colbacktitle=forest,
+  title=Decisão de arquitetura,
+  #1
+}
+
+\newtcolorbox{nota}[1][]{
+  colback=mossLight!30, colframe=moss, boxrule=0.6pt,
+  arc=2pt, left=10pt, right=10pt, top=6pt, bottom=6pt,
+  #1
+}
+
+\newtcolorbox{aviso}[1][]{
+  colback=amber!10, colframe=amber, boxrule=0.6pt,
+  arc=2pt, left=10pt, right=10pt, top=6pt, bottom=6pt,
+  #1
+}
+
+% --- Diagramas (TikZ) ------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
+
+% --- Hyperlinks ------------------------------------------------
+\usepackage[hidelinks, colorlinks=true, linkcolor=forest, urlcolor=forest, citecolor=forest]{hyperref}
+\usepackage{url}
+
+% --- Cabeçalhos e rodapés --------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{textMuted}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{textMuted}GREENHERB}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{border}\leaders\hrule height \headrulewidth\hfill}}
+
+% --- Estilo dos títulos de capítulo ----------------------------
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\Huge\bfseries\color{forest}}
+  {\fontsize{60}{60}\selectfont\color{moss}\thechapter}
+  {0pt}
+  {\titlerule[0.6pt]\vspace{6pt}\Huge}
+
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{forest}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries\color{charcoal}}
+  {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\normalsize\bfseries\color{charcoal}}
+  {\thesubsubsection}{1em}{}
+
+\titlespacing*{\chapter}{0pt}{-30pt}{30pt}
+
+% --- Bibliografia ----------------------------------------------
+\usepackage[backend=biber, style=numeric, sorting=none]{biblatex}
+\addbibresource{bibliografia.bib}
+
+% --- Identidade (autores, instituição, etc.) -------------------
+\input{config/identidade.tex}
+
+% =========================================================================
+\begin{document}
+
+% --- Capa ------------------------------------------------------
+\input{config/capa.tex}
+
+% --- Páginas iniciais ------------------------------------------
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\input{config/resumo.tex}
+
+\tableofcontents
+\clearpage
+
+\listoffigures
+\listoftables
+\clearpage
+
+% --- Corpo principal -------------------------------------------
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\include{capitulos/01-introducao}
+\include{capitulos/02-requisitos}
+\include{capitulos/03-arquitetura}
+\include{capitulos/04-conclusao}
+
+% --- Bibliografia ----------------------------------------------
+\printbibliography[heading=bibintoc, title={Referências}]
+
+% --- Anexos ----------------------------------------------------
+\appendix
+\include{capitulos/anexos}
+
+\end{document}

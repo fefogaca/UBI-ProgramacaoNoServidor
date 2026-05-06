@@ -1,0 +1,208 @@
+% =========================================================================
+%  Capítulo 2 — Requisitos
+% =========================================================================
+
+\chapter{Requisitos}
+\label{cap:requisitos}
+
+% --- INSTRUÇÕES (apagar antes da entrega) ---------------------
+% Este capítulo deve identificar e especificar os requisitos do
+% sistema. Recomenda-se a divisão em:
+%   - Atores e perfis de utilizador
+%   - Regras de negócio relevantes
+%   - Requisitos funcionais (com identificador único e descrição)
+%   - Requisitos não funcionais
+%   - Priorização e roadmap por sprint
+% Cada requisito deve ser RASTREÁVEL: ter um ID, uma descrição
+% verificável e, idealmente, um critério de aceitação.
+% ---------------------------------------------------------------
+
+
+\section{Atores do sistema}
+\label{sec:atores}
+
+% Identificar os perfis de utilizador e o que cada um pode fazer.
+% Aproveitar a tabela abaixo como ponto de partida.
+
+O sistema considera três perfis de utilizador, cada um com um
+âmbito distinto de operações.
+
+\begin{table}[H]
+\centering
+\caption{Perfis de utilizador e respetivas responsabilidades.}
+\label{tab:atores}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+\textbf{Perfil} & \textbf{Responsabilidades principais} \\
+\midrule
+Técnico        & Registo de medições e tarefas operacionais; consulta de planos e lotes atribuídos. \\
+Responsável    & Definição de planos de cultivo; autorização de intervenções pontuais; resolução de alertas. \\
+Administrador  & Gestão de utilizadores e configuração geral do sistema; acesso integral aos dados. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{Regras de negócio}
+\label{sec:regras-negocio}
+
+% Listar as regras de negócio que condicionam os requisitos.
+% É boa prática numerar (RN-01, RN-02, ...) para depois poder
+% referenciar nos requisitos e nos critérios de aceitação.
+
+As regras de negócio que condicionam o comportamento do sistema
+estão sintetizadas a seguir.
+
+\begin{description}[style=nextline, leftmargin=2cm, labelindent=0pt]
+  \item[\textbf{RN-01}] Cada plano de cultivo está associado a uma erva aromática e classifica-se como \emph{regular}, \emph{emergência} ou \emph{pontual}.
+  \item[\textbf{RN-02}] Um plano \emph{regular} inclui obrigatoriamente intervalos de temperatura, humidade e luminosidade, plano de rega e fertilização, e duração prevista do ciclo.
+  \item[\textbf{RN-03}] Um plano \emph{pontual} exige autorização explícita do Responsável.
+  \item[\textbf{RN-04}] Os alertas classificam-se como \emph{Informativo}, \emph{Aviso} ou \emph{Crítico} e podem ser \emph{Resolvidos} ou \emph{Ignorados}; a opção \emph{Ignorado} exige justificação.
+  \item[\textbf{RN-05}] O sistema opera em modo \emph{Manual} ou \emph{Automático}; em modo automático pode sugerir ou executar ações com base em regras.
+  \item[\textbf{RN-06}] [Adicionar as restantes regras relevantes derivadas do enunciado.]
+\end{description}
+
+
+\section{Priorizacao e roadmap por sprint}
+\label{sec:roadmap-sprints}
+
+A equipa adota uma abordagem incremental orientada ao contrato de API,
+de forma a reduzir retrabalho entre implementação, documentação e
+avaliação. Na Sprint 1 foi concluída a especificação OpenAPI dos
+principais recursos de domínio, sem implementação do fluxo de
+autenticação.
+
+\begin{table}[H]
+\centering
+\caption{Roadmap inicial de sprints.}
+\label{tab:roadmap}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+\textbf{Sprint} & \textbf{Foco} & \textbf{Entregáveis principais} \\
+\midrule
+Sprint 1 & Especificação OpenAPI & \texttt{openapi.yaml}, matriz RF$\rightarrow$endpoints, validação Swagger e alinhamento do relatório. \\
+Sprint 2 & Base backend e autenticação & Implementação Node.js/Mongoose, JWT, controlo de acesso por perfil e validações de entrada. \\
+Sprint 3 & Regras de negócio e histórico & Medições, alertas, modos manual/automático, histórico e auditoria. \\
+Sprint 4 & Offline, exportação e consolidação & Sincronização degradada, exportação CSV/Excel, testes finais e fecho dos critérios de aceitação. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{Requisitos funcionais}
+\label{sec:rf}
+
+% Cada requisito funcional deve ter:
+%   - Um ID único (RF-XX).
+%   - Uma descrição clara, na forma "O sistema deve...".
+%   - Os atores envolvidos.
+%   - Uma prioridade (Alta / Média / Baixa) ou MoSCoW
+%     (Must / Should / Could / Won't).
+%   - Idealmente, um critério de aceitação verificável.
+
+Os requisitos funcionais identificados estão listados na
+Tabela~\ref{tab:rf}. A prioridade segue a notação MoSCoW: \textbf{M}
+(\emph{must}, obrigatório), \textbf{S} (\emph{should}, importante),
+\textbf{C} (\emph{could}, desejável), \textbf{W} (\emph{won't},
+fora do âmbito desta versão).
+
+\begin{table}[H]
+\centering
+\caption{Lista priorizada de requisitos funcionais.}
+\label{tab:rf}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{l X c c}
+\toprule
+\textbf{ID} & \textbf{Descrição} & \textbf{Atores} & \textbf{Prio.} \\
+\midrule
+RF-01 & Autenticação de utilizadores e controlo de acesso por perfil. & Todos & M \\
+RF-02 & Gestão de utilizadores (criar, editar, desativar) pelo Administrador. & Admin. & M \\
+RF-03 & Registo, edição, consulta e importação (CSV/Excel) de ervas aromáticas. & Resp. & M \\
+RF-04 & Criação e gestão de planos de cultivo (\emph{regular}, \emph{emergência}, \emph{pontual}). & Resp. & M \\
+RF-05 & Associação de planos a lotes e consulta do estado atual de cada lote. & Resp., Téc. & M \\
+RF-06 & Registo de tarefas operacionais e marcação como executadas. & Téc. & M \\
+RF-07 & Registo de medições ambientais (temperatura, humidade, luminosidade). & Téc. & M \\
+RF-08 & Geração automática de alertas quando os valores violam o plano. & Sistema & M \\
+RF-09 & Resolução ou \emph{ignore} de alertas, com justificação obrigatória quando aplicável. & Resp. & M \\
+RF-10 & Suporte aos modos de operação \emph{Manual} e \emph{Automático}. & Resp. & S \\
+RF-11 & Histórico de medições, intervenções e alertas. & Todos & S \\
+RF-12 & Comparação entre valores reais e valores esperados pelo plano. & Resp. & S \\
+RF-13 & Exportação de relatórios em formato CSV ou Excel. & Resp., Admin. & S \\
+RF-14 & Divisão de lotes, registo de perdas e cálculo de produtividade. & Resp. & S \\
+RF-15 & Registo de logs de auditoria sobre as operações relevantes. & Sistema & M \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\subsection{Detalhe e critérios de aceitação (exemplos)}
+\label{sec:rf-detalhe}
+
+% Para os requisitos mais críticos, vale a pena escrever um
+% pequeno detalhe com critérios de aceitação. Aqui ficam dois
+% exemplos para a equipa replicar nos seus próprios requisitos
+% críticos.
+
+A seguir detalham-se dois requisitos a título de exemplo. Recomenda-se
+que esta especificação seja replicada para todos os requisitos
+classificados como \textbf{M}.
+
+\paragraph{RF-08 — Geração automática de alertas.}
+Quando uma medição ambiental é registada e algum dos seus valores
+está fora do intervalo definido no plano de cultivo associado ao
+lote, o sistema deve criar um alerta com a classificação adequada
+(\emph{Informativo}, \emph{Aviso} ou \emph{Crítico}).
+
+\textbf{Critérios de aceitação:}
+\begin{itemize}
+  \item Dada uma medição cujo valor de temperatura excede em mais de 5\,\%${}^{\circ}$C o limite superior do plano, é gerado um alerta \emph{Crítico} no prazo de 5 segundos.
+  \item Dado um sensor que não envia dados há mais de 10 minutos, é gerado um alerta de \emph{Aviso} associado ao lote.
+  \item Os alertas gerados ficam visíveis no dashboard do Responsável e no histórico do lote.
+\end{itemize}
+
+\paragraph{RF-09 — Resolução ou \emph{ignore} de alertas.}
+O Responsável deve poder marcar um alerta como \emph{Resolvido} ou
+\emph{Ignorado}. No caso de \emph{ignore}, é obrigatório fornecer
+uma justificação textual.
+
+\textbf{Critérios de aceitação:}
+\begin{itemize}
+  \item A interface impede submeter o \emph{ignore} sem justificação.
+  \item A decisão é registada no log de auditoria com identificação do utilizador, momento e justificação.
+  \item Um alerta resolvido ou ignorado deixa de aparecer na lista ativa, mas mantém-se no histórico.
+\end{itemize}
+
+
+\section{Requisitos não funcionais}
+\label{sec:rnf}
+
+% Estes requisitos não descrevem O QUE o sistema faz, mas COMO
+% o faz: desempenho, segurança, usabilidade, manutenibilidade...
+% São muitas vezes esquecidos pelos alunos — não os descurem.
+
+\begin{table}[H]
+\centering
+\caption{Requisitos não funcionais.}
+\label{tab:rnf}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+\textbf{ID} & \textbf{Categoria} & \textbf{Descrição} \\
+\midrule
+RNF-01 & Segurança       & Palavras-passe armazenadas com \emph{hashing} (e.g., bcrypt); nunca em texto claro. \\
+RNF-02 & Segurança       & Comunicações cliente-servidor protegidas por HTTPS em produção. \\
+RNF-03 & Segurança       & Autenticação via JWT, com expiração explícita e proteção das rotas. \\
+RNF-04 & Disponibilidade & A aplicação deve permitir registo de medições e tarefas em modo degradado (sem rede). \\
+RNF-05 & Usabilidade     & Interface funcional em \emph{desktop} e \emph{mobile} (\emph{responsive}). \\
+RNF-06 & Manutenibilidade & API documentada em OpenAPI 3.x e alinhada com a implementação. \\
+RNF-07 & Auditabilidade  & Todas as operações sensíveis registam autor, momento e ação. \\
+RNF-08 & [Adicionar]     & [Outros requisitos relevantes: desempenho, internacionalização, etc.] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+

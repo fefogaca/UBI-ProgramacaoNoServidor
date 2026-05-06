@@ -1,0 +1,1500 @@
+openapi: 3.0.3
+info:
+  title: GREENHERB API
+  version: 1.0.0-sprint1
+  description: |
+    Especificacao OpenAPI da Sprint 1 do projeto GREENHERB.
+    Esta sprint cobre os endpoints principais do dominio e exclui a implementacao
+    do processo de autenticacao.
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Servidor local de desenvolvimento
+tags:
+  - name: Users
+    description: Gestao de utilizadores
+  - name: Herbs
+    description: Catalogo e importacao de ervas aromaticas
+  - name: CultivationPlans
+    description: Definicao e manutencao de planos de cultivo
+  - name: Batches
+    description: Ciclo de vida e produtividade dos lotes
+  - name: Tasks
+    description: Planeamento e execucao de tarefas operacionais
+  - name: Measurements
+    description: Registo e consulta de medicoes ambientais
+  - name: Alerts
+    description: Gestao de alertas de monitorizacao
+  - name: Automation
+    description: Controlo do modo manual e automatico
+  - name: Reports
+    description: Exportacao de relatorios
+  - name: AuditLogs
+    description: Consulta de eventos de auditoria
+security:
+  - BearerAuth: []
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar utilizadores
+      responses:
+        '200':
+          description: Lista de utilizadores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Users]
+      summary: Criar utilizador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Utilizador criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags: [Users]
+      summary: Obter utilizador por ID
+      responses:
+        '200':
+          description: Utilizador encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Users]
+      summary: Atualizar utilizador
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Utilizador atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Users]
+      summary: Desativar utilizador
+      responses:
+        '204':
+          description: Utilizador desativado
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /herbs:
+    get:
+      tags: [Herbs]
+      summary: Listar ervas aromaticas
+      responses:
+        '200':
+          description: Lista de ervas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Herb'
+    post:
+      tags: [Herbs]
+      summary: Criar erva aromatica
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHerbRequest'
+      responses:
+        '201':
+          description: Erva criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Herb'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /herbs/{herbId}:
+    parameters:
+      - $ref: '#/components/parameters/HerbIdParam'
+    get:
+      tags: [Herbs]
+      summary: Obter erva por ID
+      responses:
+        '200':
+          description: Erva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Herb'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Herbs]
+      summary: Atualizar erva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHerbRequest'
+      responses:
+        '200':
+          description: Erva atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Herb'
+    delete:
+      tags: [Herbs]
+      summary: Remover erva
+      responses:
+        '204':
+          description: Erva removida
+
+  /herbs/import:
+    post:
+      tags: [Herbs]
+      summary: Importar ervas via CSV ou XLSX
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '202':
+          description: Importacao aceite para processamento
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [importId, status]
+                properties:
+                  importId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [queued, processing, completed, failed]
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /cultivation-plans:
+    get:
+      tags: [CultivationPlans]
+      summary: Listar planos de cultivo
+      parameters:
+        - in: query
+          name: type
+          schema:
+            $ref: '#/components/schemas/CultivationPlanType'
+      responses:
+        '200':
+          description: Lista de planos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CultivationPlan'
+    post:
+      tags: [CultivationPlans]
+      summary: Criar plano de cultivo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCultivationPlanRequest'
+            examples:
+              regularPlan:
+                summary: Plano regular para manjericao
+                value:
+                  herbId: herb_001
+                  name: Plano Regular Primavera
+                  type: regular
+                  regularConfig:
+                    temperature: { min: 18, max: 26 }
+                    humidity: { min: 45, max: 70 }
+                    luminosity: { min: 5000, max: 12000 }
+                    irrigation:
+                      frequencyHours: 12
+                      amountMl: 300
+                    fertilization:
+                      frequencyDays: 7
+                      dosage: NPK-10-10 5g/L
+                    expectedDurationDays: 40
+      responses:
+        '201':
+          description: Plano criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CultivationPlan'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /cultivation-plans/{planId}:
+    parameters:
+      - $ref: '#/components/parameters/PlanIdParam'
+    get:
+      tags: [CultivationPlans]
+      summary: Obter plano por ID
+      responses:
+        '200':
+          description: Plano encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CultivationPlan'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [CultivationPlans]
+      summary: Atualizar plano
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCultivationPlanRequest'
+      responses:
+        '200':
+          description: Plano atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CultivationPlan'
+    delete:
+      tags: [CultivationPlans]
+      summary: Remover plano
+      responses:
+        '204':
+          description: Plano removido
+
+  /batches:
+    get:
+      tags: [Batches]
+      summary: Listar lotes
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/BatchStatus'
+      responses:
+        '200':
+          description: Lista de lotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Batch'
+    post:
+      tags: [Batches]
+      summary: Criar lote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBatchRequest'
+      responses:
+        '201':
+          description: Lote criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+
+  /batches/{batchId}:
+    parameters:
+      - $ref: '#/components/parameters/BatchIdParam'
+    get:
+      tags: [Batches]
+      summary: Obter lote por ID
+      responses:
+        '200':
+          description: Lote encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Batches]
+      summary: Atualizar lote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBatchRequest'
+      responses:
+        '200':
+          description: Lote atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+    delete:
+      tags: [Batches]
+      summary: Remover lote
+      responses:
+        '204':
+          description: Lote removido
+
+  /batches/{batchId}/plans:
+    parameters:
+      - $ref: '#/components/parameters/BatchIdParam'
+    post:
+      tags: [Batches]
+      summary: Associar plano ao lote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId:
+                  type: string
+      responses:
+        '200':
+          description: Plano associado ao lote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Batch'
+
+  /batches/{batchId}/split:
+    parameters:
+      - $ref: '#/components/parameters/BatchIdParam'
+    post:
+      tags: [Batches]
+      summary: Dividir lote parcialmente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [childBatches]
+              properties:
+                childBatches:
+                  type: array
+                  items:
+                    type: object
+                    required: [code, quantity]
+                    properties:
+                      code:
+                        type: string
+                      quantity:
+                        type: number
+                        minimum: 0
+      responses:
+        '201':
+          description: Lote dividido com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [parentBatch, children]
+                properties:
+                  parentBatch:
+                    $ref: '#/components/schemas/Batch'
+                  children:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Batch'
+
+  /batches/{batchId}/losses:
+    parameters:
+      - $ref: '#/components/parameters/BatchIdParam'
+    post:
+      tags: [Batches]
+      summary: Registar perdas no lote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity, reason]
+              properties:
+                quantity:
+                  type: number
+                  minimum: 0
+                reason:
+                  type: string
+                  minLength: 3
+      responses:
+        '201':
+          description: Perda registada
+
+  /batches/{batchId}/productivity:
+    parameters:
+      - $ref: '#/components/parameters/BatchIdParam'
+    get:
+      tags: [Batches]
+      summary: Obter produtividade do lote
+      responses:
+        '200':
+          description: Indicadores de produtividade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductivitySummary'
+
+  /batches/{batchId}/plan-vs-actual:
+    parameters:
+      - $ref: '#/components/parameters/BatchIdParam'
+    get:
+      tags: [Batches]
+      summary: Comparar plano com valores reais do lote
+      responses:
+        '200':
+          description: Comparacao entre plano e execucao real
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanVsActualSummary'
+
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: Listar tarefas
+      parameters:
+        - in: query
+          name: batchId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+      responses:
+        '200':
+          description: Lista de tarefas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      tags: [Tasks]
+      summary: Criar tarefa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+            examples:
+              irrigacao:
+                summary: Criar tarefa de rega
+                value:
+                  batchId: batch_001
+                  type: rega
+                  scheduledAt: '2026-05-06T08:00:00Z'
+      responses:
+        '201':
+          description: Tarefa criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /tasks/{taskId}:
+    parameters:
+      - $ref: '#/components/parameters/TaskIdParam'
+    get:
+      tags: [Tasks]
+      summary: Obter tarefa por ID
+      responses:
+        '200':
+          description: Tarefa encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Tasks]
+      summary: Atualizar tarefa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Tarefa atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /tasks/{taskId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/TaskIdParam'
+    post:
+      tags: [Tasks]
+      summary: Marcar tarefa como executada
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executedAt:
+                  type: string
+                  format: date-time
+              required: [executedAt]
+      responses:
+        '200':
+          description: Tarefa marcada como concluida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /measurements:
+    get:
+      tags: [Measurements]
+      summary: Obter historico de medicoes
+      parameters:
+        - in: query
+          name: batchId
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Historico de medicoes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Measurement'
+    post:
+      tags: [Measurements]
+      summary: Registar medicao ambiental
+      description: Pode gerar alertas automaticamente quando os limites do plano sao violados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeasurementRequest'
+            examples:
+              medicaoComAlerta:
+                summary: Medicao fora do intervalo de temperatura
+                value:
+                  batchId: batch_001
+                  temperature: 33.5
+                  humidity: 62
+                  luminosity: 11500
+                  measuredAt: '2026-05-06T10:30:00Z'
+                  source: sensor
+      responses:
+        '201':
+          description: Medicao registada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [measurement, generatedAlerts]
+                properties:
+                  measurement:
+                    $ref: '#/components/schemas/Measurement'
+                  generatedAlerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+              examples:
+                created:
+                  summary: Medicao registada com alerta critico
+                  value:
+                    measurement:
+                      id: meas_901
+                      batchId: batch_001
+                      temperature: 33.5
+                      humidity: 62
+                      luminosity: 11500
+                      sensorId: sensor_t1
+                      measuredAt: '2026-05-06T10:30:00Z'
+                      source: sensor
+                    generatedAlerts:
+                      - id: alert_400
+                        batchId: batch_001
+                        measurementId: meas_901
+                        severity: critico
+                        status: ativo
+                        message: Temperatura acima do limite superior do plano
+                        createdAt: '2026-05-06T10:30:01Z'
+
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: Listar alertas
+      parameters:
+        - in: query
+          name: batchId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/AlertStatus'
+        - in: query
+          name: severity
+          schema:
+            $ref: '#/components/schemas/AlertSeverity'
+      responses:
+        '200':
+          description: Lista de alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+
+  /alerts/{alertId}:
+    parameters:
+      - $ref: '#/components/parameters/AlertIdParam'
+    get:
+      tags: [Alerts]
+      summary: Obter alerta por ID
+      responses:
+        '200':
+          description: Alerta encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /alerts/{alertId}/resolve:
+    parameters:
+      - $ref: '#/components/parameters/AlertIdParam'
+    post:
+      tags: [Alerts]
+      summary: Resolver alerta
+      responses:
+        '200':
+          description: Alerta resolvido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /alerts/{alertId}/ignore:
+    parameters:
+      - $ref: '#/components/parameters/AlertIdParam'
+    post:
+      tags: [Alerts]
+      summary: Ignorar alerta (justificacao obrigatoria)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+            examples:
+              ignoreWithReason:
+                summary: Ignorar com justificacao operacional
+                value:
+                  reason: Sensor em manutencao programada, sem impacto no lote.
+      responses:
+        '200':
+          description: Alerta ignorado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /automation/mode:
+    get:
+      tags: [Automation]
+      summary: Obter modo de operacao
+      responses:
+        '200':
+          description: Modo atual
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mode]
+                properties:
+                  mode:
+                    $ref: '#/components/schemas/AutomationMode'
+    put:
+      tags: [Automation]
+      summary: Atualizar modo de operacao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode:
+                  $ref: '#/components/schemas/AutomationMode'
+      responses:
+        '200':
+          description: Modo atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mode]
+                properties:
+                  mode:
+                    $ref: '#/components/schemas/AutomationMode'
+
+  /reports/export:
+    get:
+      tags: [Reports]
+      summary: Exportar relatorio
+      parameters:
+        - in: query
+          name: format
+          required: true
+          schema:
+            type: string
+            enum: [csv, xlsx]
+          example: csv
+      responses:
+        '200':
+          description: Ficheiro de exportacao gerado
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /audit-logs:
+    get:
+      tags: [AuditLogs]
+      summary: Listar logs de auditoria
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: actorId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de eventos de auditoria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLog'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserIdParam:
+      in: path
+      name: userId
+      required: true
+      schema:
+        type: string
+    HerbIdParam:
+      in: path
+      name: herbId
+      required: true
+      schema:
+        type: string
+    PlanIdParam:
+      in: path
+      name: planId
+      required: true
+      schema:
+        type: string
+    BatchIdParam:
+      in: path
+      name: batchId
+      required: true
+      schema:
+        type: string
+    TaskIdParam:
+      in: path
+      name: taskId
+      required: true
+      schema:
+        type: string
+    AlertIdParam:
+      in: path
+      name: alertId
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequestError:
+      description: Pedido invalido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Nao autenticado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Sem permissao
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Recurso nao encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ConflictError:
+      description: Conflito de dados
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    Role:
+      type: string
+      enum: [tecnico, responsavel, administrador]
+    CultivationPlanType:
+      type: string
+      enum: [regular, emergencia, pontual]
+    AlertSeverity:
+      type: string
+      enum: [informativo, aviso, critico]
+    AlertStatus:
+      type: string
+      enum: [ativo, resolvido, ignorado]
+    BatchStatus:
+      type: string
+      enum: [ativo, concluido, comprometido]
+    TaskStatus:
+      type: string
+      enum: [pendente, concluida]
+    AutomationMode:
+      type: string
+      enum: [manual, automatico]
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    User:
+      type: object
+      required: [id, name, email, role, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required: [name, email, role]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        role:
+          $ref: '#/components/schemas/Role'
+        active:
+          type: boolean
+
+    Herb:
+      type: object
+      required: [id, commonName, scientificName, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        commonName:
+          type: string
+        scientificName:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateHerbRequest:
+      type: object
+      required: [commonName, scientificName]
+      properties:
+        commonName:
+          type: string
+        scientificName:
+          type: string
+        notes:
+          type: string
+
+    UpdateHerbRequest:
+      type: object
+      properties:
+        commonName:
+          type: string
+        scientificName:
+          type: string
+        notes:
+          type: string
+
+    EnvironmentalRange:
+      type: object
+      required: [min, max]
+      properties:
+        min:
+          type: number
+        max:
+          type: number
+
+    IrrigationPlan:
+      type: object
+      required: [frequencyHours, amountMl]
+      properties:
+        frequencyHours:
+          type: integer
+          minimum: 1
+        amountMl:
+          type: number
+          minimum: 0
+
+    FertilizationPlan:
+      type: object
+      required: [frequencyDays, dosage]
+      properties:
+        frequencyDays:
+          type: integer
+          minimum: 1
+        dosage:
+          type: string
+
+    Approval:
+      type: object
+      required: [approvedBy, approvedAt]
+      properties:
+        approvedBy:
+          type: string
+        approvedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    CultivationPlan:
+      type: object
+      required: [id, herbId, type, name, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        herbId:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/CultivationPlanType'
+        regularConfig:
+          type: object
+          properties:
+            temperature:
+              $ref: '#/components/schemas/EnvironmentalRange'
+            humidity:
+              $ref: '#/components/schemas/EnvironmentalRange'
+            luminosity:
+              $ref: '#/components/schemas/EnvironmentalRange'
+            irrigation:
+              $ref: '#/components/schemas/IrrigationPlan'
+            fertilization:
+              $ref: '#/components/schemas/FertilizationPlan'
+            expectedDurationDays:
+              type: integer
+              minimum: 1
+        emergencyConfig:
+          type: object
+          properties:
+            minIntervalMinutes:
+              type: integer
+              minimum: 1
+            interventionType:
+              type: string
+            intensityOrDosage:
+              type: string
+        pontualConfig:
+          type: object
+          properties:
+            interventionType:
+              type: string
+            intensityOrDosage:
+              type: string
+            approval:
+              $ref: '#/components/schemas/Approval'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCultivationPlanRequest:
+      type: object
+      required: [herbId, type, name]
+      properties:
+        herbId:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/CultivationPlanType'
+        regularConfig:
+          type: object
+          properties:
+            temperature:
+              $ref: '#/components/schemas/EnvironmentalRange'
+            humidity:
+              $ref: '#/components/schemas/EnvironmentalRange'
+            luminosity:
+              $ref: '#/components/schemas/EnvironmentalRange'
+            irrigation:
+              $ref: '#/components/schemas/IrrigationPlan'
+            fertilization:
+              $ref: '#/components/schemas/FertilizationPlan'
+            expectedDurationDays:
+              type: integer
+              minimum: 1
+        emergencyConfig:
+          type: object
+          properties:
+            minIntervalMinutes:
+              type: integer
+              minimum: 1
+            interventionType:
+              type: string
+            intensityOrDosage:
+              type: string
+        pontualConfig:
+          type: object
+          properties:
+            interventionType:
+              type: string
+            intensityOrDosage:
+              type: string
+            approval:
+              $ref: '#/components/schemas/Approval'
+
+    UpdateCultivationPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        regularConfig:
+          type: object
+        emergencyConfig:
+          type: object
+        pontualConfig:
+          type: object
+
+    Batch:
+      type: object
+      required: [id, code, status, startedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        status:
+          $ref: '#/components/schemas/BatchStatus'
+        planIds:
+          type: array
+          items:
+            type: string
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        expectedEndAt:
+          type: string
+          format: date-time
+        losses:
+          type: array
+          items:
+            type: object
+            required: [quantity, reason, createdAt]
+            properties:
+              quantity:
+                type: number
+                minimum: 0
+              reason:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateBatchRequest:
+      type: object
+      required: [code, startedAt]
+      properties:
+        code:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        expectedEndAt:
+          type: string
+          format: date-time
+
+    UpdateBatchRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/BatchStatus'
+        endedAt:
+          type: string
+          format: date-time
+        expectedEndAt:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      required: [id, batchId, type, status, scheduledAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        type:
+          type: string
+          enum: [rega, fertilizacao, colheita, monitorizacao]
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        scheduledAt:
+          type: string
+          format: date-time
+        executedAt:
+          type: string
+          format: date-time
+        executedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTaskRequest:
+      type: object
+      required: [batchId, type, scheduledAt]
+      properties:
+        batchId:
+          type: string
+        type:
+          type: string
+          enum: [rega, fertilizacao, colheita, monitorizacao]
+        scheduledAt:
+          type: string
+          format: date-time
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+
+    Measurement:
+      type: object
+      required:
+        - id
+        - batchId
+        - temperature
+        - humidity
+        - luminosity
+        - measuredAt
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        temperature:
+          type: number
+        humidity:
+          type: number
+        luminosity:
+          type: number
+        sensorId:
+          type: string
+        measuredAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [manual, sensor]
+
+    CreateMeasurementRequest:
+      type: object
+      required: [batchId, temperature, humidity, luminosity, measuredAt]
+      properties:
+        batchId:
+          type: string
+        temperature:
+          type: number
+        humidity:
+          type: number
+        luminosity:
+          type: number
+        sensorId:
+          type: string
+        measuredAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [manual, sensor]
+
+    Alert:
+      type: object
+      required: [id, batchId, severity, status, message, createdAt]
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        measurementId:
+          type: string
+        severity:
+          $ref: '#/components/schemas/AlertSeverity'
+        status:
+          $ref: '#/components/schemas/AlertStatus'
+        message:
+          type: string
+        ignoredReason:
+          type: string
+        resolvedAt:
+          type: string
+          format: date-time
+        resolvedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductivitySummary:
+      type: object
+      required: [batchId, yieldKg, lossKg, productivityPercent, cycleDurationDays]
+      properties:
+        batchId:
+          type: string
+        yieldKg:
+          type: number
+        lossKg:
+          type: number
+        productivityPercent:
+          type: number
+        cycleDurationDays:
+          type: number
+
+    PlanVsActualSummary:
+      type: object
+      required: [batchId, generatedAt, indicators]
+      properties:
+        batchId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        indicators:
+          type: array
+          items:
+            type: object
+            required: [metric, expectedRange, actualAverage, status]
+            properties:
+              metric:
+                type: string
+                enum: [temperature, humidity, luminosity]
+              expectedRange:
+                $ref: '#/components/schemas/EnvironmentalRange'
+              actualAverage:
+                type: number
+              status:
+                type: string
+                enum: [within_range, out_of_range]
+
+    AuditLog:
+      type: object
+      required: [id, actorId, action, entityType, entityId, createdAt]
+      properties:
+        id:
+          type: string
+        actorId:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time

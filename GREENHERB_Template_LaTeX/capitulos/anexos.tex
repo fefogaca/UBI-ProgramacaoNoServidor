@@ -1,0 +1,97 @@
+% =========================================================================
+%  Anexos
+% =========================================================================
+
+\chapter{Especificação OpenAPI}
+\label{anexo:openapi}
+
+% Excerto da especificação OpenAPI ou referência ao ficheiro
+% completo. Para excertos mais longos, considerar incluir como
+% código com a package "listings".
+
+A especificação completa da API está disponível no ficheiro
+\texttt{openapi.yaml} no repositório do projeto
+(\url{\repositorio}). A título ilustrativo apresenta-se a seguir
+o excerto correspondente ao \emph{endpoint} de gestão de alertas
+especificado na Sprint 1.
+
+\begin{lstlisting}[language=, caption={Excerto de \texttt{openapi.yaml} — ignorar alerta com justificacao.}]
+paths:
+  /api/v1/alerts/{alertId}/ignore:
+    post:
+      summary: Ignorar alerta (justificacao obrigatoria)
+      parameters:
+        - in: path
+          name: alertId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3 }
+      responses:
+        "200":
+          description: Alerta ignorado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [ignorado]
+                  ignoredReason:
+                    type: string
+        "400":
+          description: Justificacao em falta ou invalida
+\end{lstlisting}
+
+
+\chapter{Dados de demonstração}
+\label{anexo:dados}
+
+% Descrição breve do dataset de demonstração entregue junto com
+% o código (CSV ou Excel exemplo).
+
+O dataset de demonstração inclui:
+
+\begin{itemize}
+  \item {}[N] utilizadores (um por perfil, no mínimo).
+  \item {}[N] ervas aromáticas, importadas a partir do ficheiro \texttt{ervas-exemplo.csv}.
+  \item {}[N] planos de cultivo (\emph{regular}, \emph{emergência} e \emph{pontual}).
+  \item {}[N] lotes em diferentes estados (\emph{ativo}, \emph{concluído}, \emph{comprometido}).
+  \item Histórico de medições ambientais e alertas associados.
+\end{itemize}
+
+
+\chapter{Distribuição do trabalho}
+\label{anexo:distribuicao}
+
+% Tabela honesta com a contribuição de cada elemento da equipa.
+% Útil para a avaliação individual e para a equipa refletir.
+
+\begin{table}[H]
+\centering
+\caption{Contribuição de cada elemento da equipa.}
+\label{tab:distribuicao}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{l X c}
+\toprule
+\textbf{Elemento} & \textbf{Contribuições principais} & \textbf{\%} \\
+\midrule
+Aluno 1 & [Áreas de responsabilidade e principais entregas]   &      \\
+Aluno 2 & [Áreas de responsabilidade e principais entregas]   &      \\
+Aluno 3 & [Áreas de responsabilidade e principais entregas]   &      \\
+\midrule
+\textbf{Total} & & \textbf{100\%} \\
+\bottomrule
+\end{tabularx}
+\end{table}

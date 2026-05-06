@@ -1,0 +1,60 @@
+% =========================================================================
+%  Capa
+% =========================================================================
+
+\begin{titlepage}
+\thispagestyle{empty}
+
+% Banda decorativa superior
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[forest] (current page.north west) rectangle ([yshift=-3cm]current page.north east);
+
+  % Pequeno acento moss
+  \fill[moss] ([yshift=-3cm]current page.north west) rectangle ([yshift=-3.15cm]current page.north east);
+
+  % Texto da instituição centrado dentro da banda
+  \node[anchor=center, text=white, align=center]
+    at ([yshift=-1.5cm]current page.north) {%
+      {\sffamily\Large\bfseries \instituicao}
+    };
+\end{tikzpicture}
+
+\vspace*{4cm}
+
+% Título principal
+\begin{center}
+  {\sffamily\color{moss}\large \relatoriotipo}\\[1.5cm]
+  {\sffamily\Huge\bfseries\color{forest} \projetonome}\\[0.6cm]
+  {\sffamily\large\itshape\color{charcoal} \projetosubtitulo}
+\end{center}
+
+\vspace{1.5cm}
+
+\begin{center}
+  \textcolor{moss}{\rule{4cm}{1pt}}
+\end{center}
+
+\vspace{1.5cm}
+
+% Equipa
+\begin{center}
+  {\sffamily\color{textMuted}\small REALIZADO POR}\\[0.4cm]
+  {\sffamily\normalsize \equipa}
+\end{center}
+
+\vfill
+
+% Rodapé com info do curso
+\begin{center}
+  \begin{tabular}{c}
+    {\sffamily\small\color{charcoal} \curso} \\[0.2cm]
+    {\sffamily\small\color{textMuted} \unidadecurricular} \\[0.2cm]
+    {\sffamily\small\color{textMuted} Docente: \docente} \\[0.4cm]
+    {\sffamily\small\color{textMuted} \anoletivo \quad $\cdot$ \quad \semestreletivo} \\[0.2cm]
+    {\sffamily\small\color{textMuted} \datarelatorio}
+  \end{tabular}
+\end{center}
+
+\vspace{0.5cm}
+
+\end{titlepage}
