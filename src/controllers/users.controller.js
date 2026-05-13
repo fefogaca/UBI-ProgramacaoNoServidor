@@ -1,14 +1,17 @@
-const mongoose = require("mongoose");
 const { User } = require("../models/user.model");
 const { HttpError } = require("../utils/http-error");
+const { ensureObjectId, ensureNonEmptyString, ensureEnum } = require("../utils/validators");
 const { recordAuditLog } = require("../services/audit-log.service");
 
 const VALID_ROLES = ["tecnico", "responsavel", "administrador"];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function ensureValidId(id) {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "userId invalido.");
+function ensureEmail(value) {
+  const email = ensureNonEmptyString(value, "email").toLowerCase();
+  if (!EMAIL_REGEX.test(email)) {
+    throw new HttpError(400, "VALIDATION_ERROR", "email invalido.");
   }
+  return email;
 }
 
 async function listUsers(req, res) {
@@ -17,18 +20,9 @@ async function listUsers(req, res) {
 }
 
 async function createUser(req, res) {
-  const { name, email, role } = req.body;
-  if (!name || !email || !role) {
-    throw new HttpError(400, "VALIDATION_ERROR", "Campos obrigatorios: name, email, role.");
-  }
-  if (!VALID_ROLES.includes(role)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "role invalido.");
-  }
-
-  const exists = await User.findOne({ email: email.toLowerCase() });
-  if (exists) {
-    throw new HttpError(409, "CONFLICT", "Ja existe um utilizador com este email.");
-  }
+  const name = ensureNonEmptyString(req.body.name, "name");
+  const email = ensureEmail(req.body.email);
+  const role = ensureEnum(req.body.role, "role", VALID_ROLES);
 
   const user = await User.create({ name, email, role });
 
@@ -44,7 +38,7 @@ async function createUser(req, res) {
 }
 
 async function getUserById(req, res) {
-  ensureValidId(req.params.userId);
+  ensureObjectId(req.params.userId, "userId");
   const user = await User.findById(req.params.userId);
   if (!user) {
     throw new HttpError(404, "NOT_FOUND", "Utilizador nao encontrado.");
@@ -53,16 +47,17 @@ async function getUserById(req, res) {
 }
 
 async function patchUser(req, res) {
-  ensureValidId(req.params.userId);
+  ensureObjectId(req.params.userId, "userId");
   const update = {};
-  if (req.body.name !== undefined) update.name = req.body.name;
-  if (req.body.role !== undefined) {
-    if (!VALID_ROLES.includes(req.body.role)) {
-      throw new HttpError(400, "VALIDATION_ERROR", "role invalido.");
-    }
-    update.role = req.body.role;
+  if (req.body.name !== undefined) {
+    update.name = ensureNonEmptyString(req.body.name, "name");
   }
-  if (req.body.active !== undefined) update.active = !!req.body.active;
+  if (req.body.role !== undefined) {
+    update.role = ensureEnum(req.body.role, "role", VALID_ROLES);
+  }
+  if (req.body.active !== undefined) {
+    update.active = Boolean(req.body.active);
+  }
 
   const user = await User.findByIdAndUpdate(req.params.userId, update, {
     new: true,
@@ -84,7 +79,7 @@ async function patchUser(req, res) {
 }
 
 async function deleteUser(req, res) {
-  ensureValidId(req.params.userId);
+  ensureObjectId(req.params.userId, "userId");
   const user = await User.findByIdAndUpdate(
     req.params.userId,
     { active: false },

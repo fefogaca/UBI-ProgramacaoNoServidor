@@ -1,13 +1,8 @@
 const mongoose = require("mongoose");
 const { Herb } = require("../models/herb.model");
 const { HttpError } = require("../utils/http-error");
+const { ensureObjectId, ensureNonEmptyString } = require("../utils/validators");
 const { recordAuditLog } = require("../services/audit-log.service");
-
-function ensureValidId(id) {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "Identificador invalido.");
-  }
-}
 
 async function listHerbs(req, res) {
   const herbs = await Herb.find().sort({ commonName: 1 });
@@ -15,11 +10,9 @@ async function listHerbs(req, res) {
 }
 
 async function createHerb(req, res) {
-  const { commonName, scientificName, notes } = req.body;
-
-  if (!commonName || !scientificName) {
-    throw new HttpError(400, "VALIDATION_ERROR", "Campos obrigatorios: commonName, scientificName.");
-  }
+  const commonName = ensureNonEmptyString(req.body.commonName, "commonName");
+  const scientificName = ensureNonEmptyString(req.body.scientificName, "scientificName");
+  const notes = req.body.notes ? String(req.body.notes).trim() : null;
 
   const herb = await Herb.create({ commonName, scientificName, notes });
 
@@ -35,7 +28,7 @@ async function createHerb(req, res) {
 }
 
 async function getHerbById(req, res) {
-  ensureValidId(req.params.herbId);
+  ensureObjectId(req.params.herbId, "herbId");
   const herb = await Herb.findById(req.params.herbId);
   if (!herb) {
     throw new HttpError(404, "NOT_FOUND", "Erva nao encontrada.");
@@ -44,18 +37,22 @@ async function getHerbById(req, res) {
 }
 
 async function patchHerb(req, res) {
-  ensureValidId(req.params.herbId);
-  const allowed = ["commonName", "scientificName", "notes"];
+  ensureObjectId(req.params.herbId, "herbId");
   const update = {};
-  for (const key of allowed) {
-    if (req.body[key] !== undefined) update[key] = req.body[key];
+  if (req.body.commonName !== undefined) {
+    update.commonName = ensureNonEmptyString(req.body.commonName, "commonName");
+  }
+  if (req.body.scientificName !== undefined) {
+    update.scientificName = ensureNonEmptyString(req.body.scientificName, "scientificName");
+  }
+  if (req.body.notes !== undefined) {
+    update.notes = req.body.notes === null ? null : String(req.body.notes).trim();
   }
 
   const herb = await Herb.findByIdAndUpdate(req.params.herbId, update, {
     new: true,
     runValidators: true,
   });
-
   if (!herb) {
     throw new HttpError(404, "NOT_FOUND", "Erva nao encontrada.");
   }
@@ -72,7 +69,7 @@ async function patchHerb(req, res) {
 }
 
 async function deleteHerb(req, res) {
-  ensureValidId(req.params.herbId);
+  ensureObjectId(req.params.herbId, "herbId");
   const herb = await Herb.findByIdAndDelete(req.params.herbId);
   if (!herb) {
     throw new HttpError(404, "NOT_FOUND", "Erva nao encontrada.");

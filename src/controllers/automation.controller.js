@@ -1,27 +1,22 @@
 const { AutomationSetting } = require("../models/automation-setting.model");
-const { HttpError } = require("../utils/http-error");
+const { ensureEnum } = require("../utils/validators");
 const { recordAuditLog } = require("../services/audit-log.service");
 
 const VALID_MODES = ["manual", "automatico"];
+const DEFAULT_MODE = "manual";
 
 async function getMode(req, res) {
-  let setting = await AutomationSetting.findOne({ key: "global" });
-  if (!setting) {
-    setting = await AutomationSetting.create({ key: "global", mode: "manual" });
-  }
-  return res.status(200).json({ mode: setting.mode });
+  const setting = await AutomationSetting.findOne({ key: "global" });
+  return res.status(200).json({ mode: setting ? setting.mode : DEFAULT_MODE });
 }
 
 async function updateMode(req, res) {
-  const { mode } = req.body;
-  if (!mode || !VALID_MODES.includes(mode)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "mode deve ser manual ou automatico.");
-  }
+  const mode = ensureEnum(req.body.mode, "mode", VALID_MODES);
 
   const setting = await AutomationSetting.findOneAndUpdate(
     { key: "global" },
     { mode },
-    { new: true, upsert: true }
+    { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 
   await recordAuditLog({
