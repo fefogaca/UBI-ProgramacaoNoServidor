@@ -1,0 +1,20 @@
+# MongoDB para o projeto GREENHERB (development).
+# A base de dados lógica `greenherb` usa-se através do path em MONGODB_URI
+# (ex.: mongodb://127.0.0.1:27018/greenherb).
+#
+# Porta host 27018: evita conflito se tiver outro mongo em 27017 na máquina.
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: greenherb-mongodb
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_DATABASE: greenherb
+    volumes:
+      - greenherb-mongo-data:/data/db
+
+volumes:
+  greenherb-mongo-data:
