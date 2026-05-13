@@ -10,16 +10,19 @@ const METRICS = [
 
 function classifySeverity(value, range) {
   const span = range.max - range.min;
-  if (span <= 0) return "aviso";
   const deviation = Math.max(range.min - value, value - range.max);
-  if (deviation <= span * 0.1) return "informativo";
-  if (deviation <= span * 0.3) return "aviso";
+  if (span <= 0) {
+    return deviation > 0 ? "critico" : "informativo";
+  }
+  const ratio = deviation / span;
+  if (ratio <= 0.1) return "informativo";
+  if (ratio <= 0.3) return "aviso";
   return "critico";
 }
 
 async function generateAlertsForMeasurement(measurement) {
   const batch = await Batch.findById(measurement.batchId);
-  if (!batch || !batch.planIds || batch.planIds.length === 0) {
+  if (!batch || !Array.isArray(batch.planIds) || batch.planIds.length === 0) {
     return [];
   }
 
@@ -35,16 +38,18 @@ async function generateAlertsForMeasurement(measurement) {
 
   for (const { key, label } of METRICS) {
     const range = plan.regularConfig[key];
-    if (!range || typeof measurement[key] !== "number") continue;
+    if (!range || typeof range.min !== "number" || typeof range.max !== "number") continue;
+    const value = measurement[key];
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
 
-    if (measurement[key] < range.min || measurement[key] > range.max) {
-      const direction = measurement[key] > range.max ? "acima do limite superior" : "abaixo do limite inferior";
+    if (value < range.min || value > range.max) {
+      const direction = value > range.max ? "acima do limite superior" : "abaixo do limite inferior";
       alertsToCreate.push({
         batchId: measurement.batchId,
         measurementId: measurement._id,
-        severity: classifySeverity(measurement[key], range),
+        severity: classifySeverity(value, range),
         status: "ativo",
-        message: `${label} ${measurement[key]} ${direction} do plano (${range.min} - ${range.max}).`,
+        message: `${label} ${value} ${direction} do plano (${range.min} - ${range.max}).`,
       });
     }
   }
@@ -57,4 +62,5 @@ async function generateAlertsForMeasurement(measurement) {
 
 module.exports = {
   generateAlertsForMeasurement,
+  classifySeverity,
 };
