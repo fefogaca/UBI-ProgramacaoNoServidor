@@ -1,39 +1,42 @@
-const mongoose = require("mongoose");
 const { Batch } = require("../models/batch.model");
 const { CultivationPlan } = require("../models/cultivation-plan.model");
 const { Measurement } = require("../models/measurement.model");
 const { HttpError } = require("../utils/http-error");
+const {
+  ensureObjectId,
+  ensureNonEmptyString,
+  ensureFiniteNumber,
+  ensureEnum,
+  ensureDate,
+  optionalDate,
+} = require("../utils/validators");
 const { recordAuditLog } = require("../services/audit-log.service");
 
 const VALID_STATUS = ["ativo", "concluido", "comprometido"];
 
-function ensureValidId(id, label = "batchId") {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new HttpError(400, "VALIDATION_ERROR", `${label} invalido.`);
-  }
-}
-
 async function listBatches(req, res) {
   const query = {};
-  if (req.query.status) query.status = req.query.status;
+  if (req.query.status) {
+    query.status = ensureEnum(req.query.status, "status", VALID_STATUS);
+  }
   const batches = await Batch.find(query).sort({ createdAt: -1 });
   return res.status(200).json(batches);
 }
 
 async function createBatch(req, res) {
-  const { code, startedAt, expectedEndAt, initialQuantity } = req.body;
-  if (!code || !startedAt) {
-    throw new HttpError(400, "VALIDATION_ERROR", "Campos obrigatorios: code, startedAt.");
-  }
-  const exists = await Batch.findOne({ code });
-  if (exists) {
-    throw new HttpError(409, "CONFLICT", "Ja existe um lote com este code.");
-  }
+  const code = ensureNonEmptyString(req.body.code, "code");
+  const startedAt = ensureDate(req.body.startedAt, "startedAt");
+  const expectedEndAt = optionalDate(req.body.expectedEndAt, "expectedEndAt") || null;
+  const initialQuantity =
+    req.body.initialQuantity !== undefined && req.body.initialQuantity !== null
+      ? ensureFiniteNumber(req.body.initialQuantity, "initialQuantity", { min: 0 })
+      : null;
+
   const batch = await Batch.create({
     code,
     startedAt,
-    expectedEndAt: expectedEndAt || null,
-    initialQuantity: initialQuantity ?? null,
+    expectedEndAt,
+    initialQuantity,
   });
 
   await recordAuditLog({
@@ -48,24 +51,36 @@ async function createBatch(req, res) {
 }
 
 async function getBatchById(req, res) {
-  ensureValidId(req.params.batchId);
+  ensureObjectId(req.params.batchId, "batchId");
   const batch = await Batch.findById(req.params.batchId);
   if (!batch) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
   return res.status(200).json(batch.toJSON());
 }
 
 async function patchBatch(req, res) {
-  ensureValidId(req.params.batchId);
+  ensureObjectId(req.params.batchId, "batchId");
   const update = {};
   if (req.body.status !== undefined) {
-    if (!VALID_STATUS.includes(req.body.status)) {
-      throw new HttpError(400, "VALIDATION_ERROR", "status invalido.");
-    }
-    update.status = req.body.status;
+    update.status = ensureEnum(req.body.status, "status", VALID_STATUS);
   }
-  if (req.body.endedAt !== undefined) update.endedAt = req.body.endedAt;
-  if (req.body.expectedEndAt !== undefined) update.expectedEndAt = req.body.expectedEndAt;
-  if (req.body.yieldKg !== undefined) update.yieldKg = req.body.yieldKg;
+  if (req.body.endedAt !== undefined) {
+    update.endedAt = req.body.endedAt === null ? null : ensureDate(req.body.endedAt, "endedAt");
+  }
+  if (req.body.expectedEndAt !== undefined) {
+    update.expectedEndAt =
+      req.body.expectedEndAt === null
+        ? null
+        : ensureDate(req.body.expectedEndAt, "expectedEndAt");
+  }
+  if (req.body.yieldKg !== undefined) {
+    update.yieldKg = ensureFiniteNumber(req.body.yieldKg, "yieldKg", { min: 0 });
+  }
+
+  if (Object.keys(update).length === 0) {
+    const current = await Batch.findById(req.params.batchId);
+    if (!current) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
+    return res.status(200).json(current.toJSON());
+  }
 
   const batch = await Batch.findByIdAndUpdate(req.params.batchId, update, {
     new: true,
@@ -85,7 +100,7 @@ async function patchBatch(req, res) {
 }
 
 async function deleteBatch(req, res) {
-  ensureValidId(req.params.batchId);
+  ensureObjectId(req.params.batchId, "batchId");
   const batch = await Batch.findByIdAndDelete(req.params.batchId);
   if (!batch) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
 
@@ -100,21 +115,17 @@ async function deleteBatch(req, res) {
 }
 
 async function attachPlan(req, res) {
-  ensureValidId(req.params.batchId);
-  const { planId } = req.body;
-  if (!planId) {
-    throw new HttpError(400, "VALIDATION_ERROR", "planId e obrigatorio.");
-  }
-  ensureValidId(planId, "planId");
+  ensureObjectId(req.params.batchId, "batchId");
+  ensureObjectId(req.body.planId, "planId");
 
-  const plan = await CultivationPlan.findById(planId);
+  const plan = await CultivationPlan.findById(req.body.planId);
   if (!plan) {
     throw new HttpError(400, "VALIDATION_ERROR", "Plano nao encontrado.");
   }
 
   const batch = await Batch.findByIdAndUpdate(
     req.params.batchId,
-    { $addToSet: { planIds: planId } },
+    { $addToSet: { planIds: plan._id } },
     { new: true }
   );
   if (!batch) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
@@ -124,69 +135,77 @@ async function attachPlan(req, res) {
     action: "batch.attach_plan",
     entityType: "Batch",
     entityId: batch._id,
-    metadata: { planId },
+    metadata: { planId: String(plan._id) },
   });
 
   return res.status(200).json(batch.toJSON());
 }
 
 async function splitBatch(req, res) {
-  ensureValidId(req.params.batchId);
+  ensureObjectId(req.params.batchId, "batchId");
+
   const { childBatches } = req.body;
   if (!Array.isArray(childBatches) || childBatches.length === 0) {
     throw new HttpError(400, "VALIDATION_ERROR", "childBatches deve ser um array nao vazio.");
   }
-  for (const child of childBatches) {
-    if (!child.code || typeof child.quantity !== "number" || child.quantity < 0) {
-      throw new HttpError(400, "VALIDATION_ERROR", "Cada child precisa de code e quantity >= 0.");
+
+  const seenCodes = new Set();
+  const validated = childBatches.map((child, idx) => {
+    const code = ensureNonEmptyString(child.code, `childBatches[${idx}].code`);
+    const quantity = ensureFiniteNumber(child.quantity, `childBatches[${idx}].quantity`, {
+      min: 0,
+    });
+    if (seenCodes.has(code)) {
+      throw new HttpError(400, "VALIDATION_ERROR", `code duplicado em childBatches: ${code}.`);
     }
+    seenCodes.add(code);
+    return { code, quantity };
+  });
+
+  const existing = await Batch.find({ code: { $in: Array.from(seenCodes) } }).select("code");
+  if (existing.length > 0) {
+    throw new HttpError(409, "CONFLICT", `Lotes ja existem com codigos: ${existing.map((b) => b.code).join(", ")}.`);
   }
 
   const parent = await Batch.findById(req.params.batchId);
   if (!parent) throw new HttpError(404, "NOT_FOUND", "Lote pai nao encontrado.");
 
-  const created = [];
-  for (const child of childBatches) {
-    const newBatch = await Batch.create({
+  const created = await Batch.insertMany(
+    validated.map((child) => ({
       code: child.code,
       startedAt: parent.startedAt,
       expectedEndAt: parent.expectedEndAt,
       planIds: parent.planIds,
       parentBatchId: parent._id,
       initialQuantity: child.quantity,
-    });
-    created.push(newBatch.toJSON());
-  }
+    }))
+  );
 
   await recordAuditLog({
     actorId: req.header("x-actor-id"),
     action: "batch.split",
     entityType: "Batch",
     entityId: parent._id,
-    metadata: { childCount: created.length },
+    metadata: { childIds: created.map((c) => String(c._id)) },
   });
 
   return res.status(201).json({
     parentBatch: parent.toJSON(),
-    children: created,
+    children: created.map((c) => c.toJSON()),
   });
 }
 
 async function registerLoss(req, res) {
-  ensureValidId(req.params.batchId);
-  const { quantity, reason } = req.body;
-  if (typeof quantity !== "number" || quantity < 0) {
-    throw new HttpError(400, "VALIDATION_ERROR", "quantity deve ser >= 0.");
-  }
-  if (!reason || reason.trim().length < 3) {
-    throw new HttpError(400, "VALIDATION_ERROR", "reason e obrigatorio (minimo 3 caracteres).");
+  ensureObjectId(req.params.batchId, "batchId");
+  const quantity = ensureFiniteNumber(req.body.quantity, "quantity", { min: 0 });
+  const reason = ensureNonEmptyString(req.body.reason, "reason");
+  if (reason.length < 3) {
+    throw new HttpError(400, "VALIDATION_ERROR", "reason deve ter pelo menos 3 caracteres.");
   }
 
   const batch = await Batch.findByIdAndUpdate(
     req.params.batchId,
-    {
-      $push: { losses: { quantity, reason, createdAt: new Date() } },
-    },
+    { $push: { losses: { quantity, reason, createdAt: new Date() } } },
     { new: true }
   );
   if (!batch) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
@@ -218,8 +237,12 @@ function calculateCycleDurationDays(batch) {
   return (end - start) / (1000 * 60 * 60 * 24);
 }
 
+function round(value) {
+  return Math.round(value * 100) / 100;
+}
+
 async function getProductivity(req, res) {
-  ensureValidId(req.params.batchId);
+  ensureObjectId(req.params.batchId, "batchId");
   const batch = await Batch.findById(req.params.batchId);
   if (!batch) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
 
@@ -230,37 +253,29 @@ async function getProductivity(req, res) {
 
   return res.status(200).json({
     batchId: batch._id.toString(),
-    yieldKg,
-    lossKg,
-    productivityPercent: Math.round(productivityPercent * 100) / 100,
-    cycleDurationDays: Math.round(calculateCycleDurationDays(batch) * 100) / 100,
+    yieldKg: round(yieldKg),
+    lossKg: round(lossKg),
+    productivityPercent: round(productivityPercent),
+    cycleDurationDays: round(calculateCycleDurationDays(batch)),
   });
 }
 
 async function getPlanVsActual(req, res) {
-  ensureValidId(req.params.batchId);
+  ensureObjectId(req.params.batchId, "batchId");
   const batch = await Batch.findById(req.params.batchId);
   if (!batch) throw new HttpError(404, "NOT_FOUND", "Lote nao encontrado.");
 
-  if (!batch.planIds || batch.planIds.length === 0) {
-    return res.status(200).json({
-      batchId: batch._id.toString(),
-      generatedAt: new Date().toISOString(),
-      indicators: [],
-    });
+  const generatedAt = new Date().toISOString();
+  if (!Array.isArray(batch.planIds) || batch.planIds.length === 0) {
+    return res.status(200).json({ batchId: batch._id.toString(), generatedAt, indicators: [] });
   }
 
   const plan = await CultivationPlan.findOne({
     _id: { $in: batch.planIds },
     type: "regular",
   });
-
   if (!plan || !plan.regularConfig) {
-    return res.status(200).json({
-      batchId: batch._id.toString(),
-      generatedAt: new Date().toISOString(),
-      indicators: [],
-    });
+    return res.status(200).json({ batchId: batch._id.toString(), generatedAt, indicators: [] });
   }
 
   const measurements = await Measurement.find({ batchId: batch._id });
@@ -271,20 +286,22 @@ async function getPlanVsActual(req, res) {
     const range = plan.regularConfig[metric];
     if (!range) continue;
 
-    const values = measurements.map((m) => m[metric]).filter((v) => typeof v === "number");
+    const values = measurements
+      .map((m) => m[metric])
+      .filter((v) => typeof v === "number" && Number.isFinite(v));
     const average = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    const inRange = average >= range.min && average <= range.max;
+    const inRange = values.length > 0 && average >= range.min && average <= range.max;
     indicators.push({
       metric,
       expectedRange: { min: range.min, max: range.max },
-      actualAverage: Math.round(average * 100) / 100,
+      actualAverage: round(average),
       status: inRange ? "within_range" : "out_of_range",
     });
   }
 
   return res.status(200).json({
     batchId: batch._id.toString(),
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     indicators,
   });
 }
