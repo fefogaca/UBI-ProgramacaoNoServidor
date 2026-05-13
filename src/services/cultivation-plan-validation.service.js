@@ -1,22 +1,23 @@
 const { HttpError } = require("../utils/http-error");
+const {
+  ensureNonEmptyString,
+  ensureFiniteNumber,
+  ensureEnum,
+  ensureDate,
+} = require("../utils/validators");
 
-function hasAllKeys(target, keys) {
-  return keys.every((key) => target && target[key] !== undefined && target[key] !== null);
-}
+const PLAN_TYPES = ["regular", "emergencia", "pontual"];
 
 function validateRange(name, range) {
-  if (!range || typeof range !== "object") {
+  if (!range || typeof range !== "object" || Array.isArray(range)) {
     throw new HttpError(400, "VALIDATION_ERROR", `${name} e obrigatorio.`);
   }
-
-  const { min, max } = range;
-  if (typeof min !== "number" || typeof max !== "number") {
-    throw new HttpError(400, "VALIDATION_ERROR", `${name}.min e ${name}.max devem ser numericos.`);
-  }
-
-  if (min > max) {
+  ensureFiniteNumber(range.min, `${name}.min`);
+  ensureFiniteNumber(range.max, `${name}.max`);
+  if (range.min > range.max) {
     throw new HttpError(400, "VALIDATION_ERROR", `${name}.min nao pode ser maior que ${name}.max.`);
   }
+  return { min: range.min, max: range.max };
 }
 
 function validateRegularConfig(regularConfig) {
@@ -24,39 +25,50 @@ function validateRegularConfig(regularConfig) {
     throw new HttpError(400, "VALIDATION_ERROR", "regularConfig e obrigatorio para plano regular.");
   }
 
-  const requiredRoot = ["temperature", "humidity", "luminosity", "irrigation", "fertilization", "expectedDurationDays"];
-  if (!hasAllKeys(regularConfig, requiredRoot)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "regularConfig incompleto para plano regular.");
-  }
+  const temperature = validateRange("regularConfig.temperature", regularConfig.temperature);
+  const humidity = validateRange("regularConfig.humidity", regularConfig.humidity);
+  const luminosity = validateRange("regularConfig.luminosity", regularConfig.luminosity);
 
-  validateRange("regularConfig.temperature", regularConfig.temperature);
-  validateRange("regularConfig.humidity", regularConfig.humidity);
-  validateRange("regularConfig.luminosity", regularConfig.luminosity);
-
-  if (
-    typeof regularConfig.irrigation.frequencyHours !== "number" ||
-    regularConfig.irrigation.frequencyHours < 1 ||
-    typeof regularConfig.irrigation.amountMl !== "number" ||
-    regularConfig.irrigation.amountMl < 0
-  ) {
-    throw new HttpError(400, "VALIDATION_ERROR", "irrigation invalido para plano regular.");
+  if (!regularConfig.irrigation || typeof regularConfig.irrigation !== "object") {
+    throw new HttpError(400, "VALIDATION_ERROR", "regularConfig.irrigation e obrigatorio.");
   }
+  const irrigation = {
+    frequencyHours: ensureFiniteNumber(
+      regularConfig.irrigation.frequencyHours,
+      "irrigation.frequencyHours",
+      { min: 1 }
+    ),
+    amountMl: ensureFiniteNumber(regularConfig.irrigation.amountMl, "irrigation.amountMl", {
+      min: 0,
+    }),
+  };
 
-  if (
-    typeof regularConfig.fertilization.frequencyDays !== "number" ||
-    regularConfig.fertilization.frequencyDays < 1 ||
-    typeof regularConfig.fertilization.dosage !== "string" ||
-    !regularConfig.fertilization.dosage.trim()
-  ) {
-    throw new HttpError(400, "VALIDATION_ERROR", "fertilization invalido para plano regular.");
+  if (!regularConfig.fertilization || typeof regularConfig.fertilization !== "object") {
+    throw new HttpError(400, "VALIDATION_ERROR", "regularConfig.fertilization e obrigatorio.");
   }
+  const fertilization = {
+    frequencyDays: ensureFiniteNumber(
+      regularConfig.fertilization.frequencyDays,
+      "fertilization.frequencyDays",
+      { min: 1 }
+    ),
+    dosage: ensureNonEmptyString(regularConfig.fertilization.dosage, "fertilization.dosage"),
+  };
 
-  if (
-    typeof regularConfig.expectedDurationDays !== "number" ||
-    regularConfig.expectedDurationDays < 1
-  ) {
-    throw new HttpError(400, "VALIDATION_ERROR", "expectedDurationDays deve ser maior ou igual a 1.");
-  }
+  const expectedDurationDays = ensureFiniteNumber(
+    regularConfig.expectedDurationDays,
+    "expectedDurationDays",
+    { min: 1 }
+  );
+
+  return {
+    temperature,
+    humidity,
+    luminosity,
+    irrigation,
+    fertilization,
+    expectedDurationDays,
+  };
 }
 
 function validateEmergencyConfig(emergencyConfig) {
@@ -64,14 +76,18 @@ function validateEmergencyConfig(emergencyConfig) {
     throw new HttpError(400, "VALIDATION_ERROR", "emergencyConfig e obrigatorio para plano emergencia.");
   }
 
-  const requiredRoot = ["minIntervalMinutes", "interventionType", "intensityOrDosage"];
-  if (!hasAllKeys(emergencyConfig, requiredRoot)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "emergencyConfig incompleto para plano emergencia.");
-  }
-
-  if (typeof emergencyConfig.minIntervalMinutes !== "number" || emergencyConfig.minIntervalMinutes < 1) {
-    throw new HttpError(400, "VALIDATION_ERROR", "minIntervalMinutes deve ser maior ou igual a 1.");
-  }
+  return {
+    minIntervalMinutes: ensureFiniteNumber(
+      emergencyConfig.minIntervalMinutes,
+      "minIntervalMinutes",
+      { min: 1 }
+    ),
+    interventionType: ensureNonEmptyString(emergencyConfig.interventionType, "interventionType"),
+    intensityOrDosage: ensureNonEmptyString(
+      emergencyConfig.intensityOrDosage,
+      "intensityOrDosage"
+    ),
+  };
 }
 
 function validatePontualConfig(pontualConfig) {
@@ -79,40 +95,53 @@ function validatePontualConfig(pontualConfig) {
     throw new HttpError(400, "VALIDATION_ERROR", "pontualConfig e obrigatorio para plano pontual.");
   }
 
-  const requiredRoot = ["interventionType", "intensityOrDosage", "approval"];
-  if (!hasAllKeys(pontualConfig, requiredRoot)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "pontualConfig incompleto para plano pontual.");
+  if (!pontualConfig.approval || typeof pontualConfig.approval !== "object") {
+    throw new HttpError(400, "VALIDATION_ERROR", "approval e obrigatorio para plano pontual.");
   }
 
-  const approvalRequired = ["approvedBy", "approvedAt"];
-  if (!hasAllKeys(pontualConfig.approval, approvalRequired)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "approval incompleto para plano pontual.");
-  }
+  return {
+    interventionType: ensureNonEmptyString(pontualConfig.interventionType, "interventionType"),
+    intensityOrDosage: ensureNonEmptyString(
+      pontualConfig.intensityOrDosage,
+      "intensityOrDosage"
+    ),
+    approval: {
+      approvedBy: ensureNonEmptyString(pontualConfig.approval.approvedBy, "approval.approvedBy"),
+      approvedAt: ensureDate(pontualConfig.approval.approvedAt, "approval.approvedAt"),
+      notes:
+        pontualConfig.approval.notes !== undefined && pontualConfig.approval.notes !== null
+          ? String(pontualConfig.approval.notes).trim() || null
+          : null,
+    },
+  };
 }
 
-function validateCreateCultivationPlanPayload(payload) {
-  const required = ["herbId", "name", "type"];
-  if (!hasAllKeys(payload, required)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "Campos obrigatorios: herbId, name, type.");
+function buildCultivationPlanFromPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new HttpError(400, "VALIDATION_ERROR", "Corpo do pedido em falta.");
   }
 
-  if (!["regular", "emergencia", "pontual"].includes(payload.type)) {
-    throw new HttpError(400, "VALIDATION_ERROR", "type deve ser regular, emergencia ou pontual.");
+  const name = ensureNonEmptyString(payload.name, "name");
+  const herbId = ensureNonEmptyString(payload.herbId, "herbId");
+  const type = ensureEnum(payload.type, "type", PLAN_TYPES);
+
+  const plan = { name, herbId, type };
+
+  if (type === "regular") {
+    plan.regularConfig = validateRegularConfig(payload.regularConfig);
+  } else if (type === "emergencia") {
+    plan.emergencyConfig = validateEmergencyConfig(payload.emergencyConfig);
+  } else if (type === "pontual") {
+    plan.pontualConfig = validatePontualConfig(payload.pontualConfig);
   }
 
-  if (payload.type === "regular") {
-    validateRegularConfig(payload.regularConfig);
-  }
-
-  if (payload.type === "emergencia") {
-    validateEmergencyConfig(payload.emergencyConfig);
-  }
-
-  if (payload.type === "pontual") {
-    validatePontualConfig(payload.pontualConfig);
-  }
+  return plan;
 }
 
 module.exports = {
-  validateCreateCultivationPlanPayload,
+  PLAN_TYPES,
+  buildCultivationPlanFromPayload,
+  validateRegularConfig,
+  validateEmergencyConfig,
+  validatePontualConfig,
 };
