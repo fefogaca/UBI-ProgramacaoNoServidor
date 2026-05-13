@@ -1297,6 +1297,10 @@ components:
         expectedEndAt:
           type: string
           format: date-time
+        initialQuantity:
+          type: number
+          minimum: 0
+          description: Quantidade inicial estimada (usada no calculo de produtividade).
 
     UpdateBatchRequest:
       type: object
@@ -1309,6 +1313,10 @@ components:
         expectedEndAt:
           type: string
           format: date-time
+        yieldKg:
+          type: number
+          minimum: 0
+          description: Producao final em kg, usada para o calculo de produtividade.
 
     Task:
       type: object
